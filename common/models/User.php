@@ -23,8 +23,13 @@ use yii\web\IdentityInterface;
  */
 class User extends ActiveRecord implements IdentityInterface
 {
-    const STATUS_DELETED = 0;
-    const STATUS_ACTIVE = 10;
+    const STATUS_BLOCKED = 0;
+    const STATUS_ACTIVE = 1;
+
+    //Роли
+    const ROLE_ROOT = 'root';
+    const ROLE_ADMIN = 'admin';
+    const ROLE_USER = 'user';
 
     /**
      * @inheritdoc
@@ -50,8 +55,17 @@ class User extends ActiveRecord implements IdentityInterface
     public function rules()
     {
         return [
+            ['username', 'string'],
+
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
-            ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_DELETED]],
+            ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_BLOCKED]],
+
+            ['role', 'default', 'value' => self::ROLE_USER],
+
+            ['email', 'filter', 'filter' => 'trim'],
+            ['email', 'email'],
+            ['email', 'string', 'max' => 255],
+            ['email', 'unique', 'targetClass' => '\common\models\User', 'message' => 'Данный адрес электронной почты уже зарегистрирован в системе.'],
         ];
     }
 
@@ -80,6 +94,17 @@ class User extends ActiveRecord implements IdentityInterface
     public static function findByUsername($username)
     {
         return static::findOne(['username' => $username, 'status' => self::STATUS_ACTIVE]);
+    }
+
+    /**
+     * Finds user by E-mail
+     *
+     * @param string $mail
+     * @return static|null
+     */
+    public static function findByEmail($mail)
+    {
+        return static::findOne(['email' => $mail, 'status' => self::STATUS_ACTIVE]);
     }
 
     /**
